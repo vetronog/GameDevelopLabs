@@ -1,8 +1,11 @@
 #include "stdafx.h"
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
-const float step = 15.0f;
+const float speed = 15.0f;
 using namespace sf;
+using namespace std;
+
 
 enum struct Direction
 {
@@ -71,6 +74,26 @@ void UpdateSecondSnowBall(SnowBall &ball, Player &player)
 	ball.s_snowball.setPosition(position);
 }
 
+bool FirstPlayerWin(SnowBall ball, Player &enemy)
+{
+	Vector2f snowballPosition = ball.s_snowball.getPosition();
+	Vector2f enemyPosition = enemy.s_player.getPosition();
+	return (snowballPosition.x >= enemyPosition.x &&
+		snowballPosition.x <= enemyPosition.x + 40 &&
+		snowballPosition.y >= enemyPosition.y &&
+		snowballPosition.y <= enemyPosition.y + 40);
+}
+
+bool SecondPlayerWin(SnowBall ball, Player &player)
+{
+	Vector2f snowballPosition = ball.s_snowball.getPosition();
+	Vector2f enemyPosition = player.s_player.getPosition();
+	return (snowballPosition.x >= enemyPosition.x &&
+		snowballPosition.x <= enemyPosition.x + 40 &&
+		snowballPosition.y <= enemyPosition.y &&
+		snowballPosition.y + 5 >= enemyPosition.y);
+}
+
 void initializeMan(Player &player, int &numberPlayer)
 {
 	Color color;
@@ -102,11 +125,16 @@ void initializeMan(Player &player, int &numberPlayer)
 	player.s_lefthand.setPosition(positionLeftHand);
 }
 
-void UpdatePlayer(Player &player, int &numberPlayer)
+void UpdatePlayer(Player &player, int &numberPlayer, Clock &clock)
 {
 	Vector2f position = player.s_player.getPosition();
 	Vector2f positionRight = player.s_righthand.getPosition();
 	Vector2f positionLeft = player.s_lefthand.getPosition();
+	/*int time = clock.getElapsedTime().asMilliseconds();
+	clock.restart();
+	time = time / 100;
+	int step = speed * time;*/
+	int step = 15.f;
 	switch (player.direction)
 	{
 	case Direction::UP:
@@ -194,55 +222,55 @@ void UpdatePlayer(Player &player, int &numberPlayer)
 	player.s_lefthand.setPosition(positionLeft);
 }
 
-void UpdateDirectionFirstPlayer(Player &player, int &numberPlayer)
+void UpdateDirectionFirstPlayer(Player &player, int &numberPlayer, Clock &clock)
 {
 	if (Keyboard::isKeyPressed(Keyboard::Up))
 		{
 			player.direction = Direction::UP;
-			UpdatePlayer(player, numberPlayer);
+			UpdatePlayer(player, numberPlayer, clock);
 		}
 	else if (Keyboard::isKeyPressed(Keyboard::Down))
 	{
 		player.direction = Direction::DOWN;
-		UpdatePlayer(player, numberPlayer);
+		UpdatePlayer(player, numberPlayer, clock);
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 	{
 		player.direction = Direction::LEFT;
-		UpdatePlayer(player, numberPlayer);
+		UpdatePlayer(player, numberPlayer, clock);
 	}
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-		{
-			player.direction = Direction::RIGHT;
-			UpdatePlayer(player, numberPlayer);
-		}
+	{
+		player.direction = Direction::RIGHT;
+		UpdatePlayer(player, numberPlayer, clock);
+	}
 }
 
-void UpdateDirectionSecondPlayer(Player &enemy, int &numberPlayer)
+void UpdateDirectionSecondPlayer(Player &enemy, int &numberPlayer, Clock &clock)
 {
 	if (Keyboard::isKeyPressed(Keyboard::W))
 	{
 		enemy.direction = Direction::UP;
-		UpdatePlayer(enemy, numberPlayer);
+		UpdatePlayer(enemy, numberPlayer, clock);
 	}
 	else if (Keyboard::isKeyPressed(Keyboard::S))
 	{
 		enemy.direction = Direction::DOWN;
-		UpdatePlayer(enemy, numberPlayer);
+		UpdatePlayer(enemy, numberPlayer, clock);
 	}
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
 	{
 		enemy.direction = Direction::LEFT;
-		UpdatePlayer(enemy, numberPlayer);
+		UpdatePlayer(enemy, numberPlayer, clock);
 	}
 	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
 	{
 		enemy.direction = Direction::RIGHT;
-		UpdatePlayer(enemy, numberPlayer);
+		UpdatePlayer(enemy, numberPlayer, clock);
 	}
 }
 
-void handleEvents(sf::RenderWindow & window, Player &player, Player &enemy, SnowBall &ball)
+void handleEvents(sf::RenderWindow & window, Player &player, Player &enemy, SnowBall &ball, Clock &clock)
 {
 	sf::Event event;
 	while (window.pollEvent(event))
@@ -252,9 +280,9 @@ void handleEvents(sf::RenderWindow & window, Player &player, Player &enemy, Snow
 			window.close();
 		}
 		int numberPlayer = 1;
-		UpdateDirectionFirstPlayer(player, numberPlayer);
+		UpdateDirectionFirstPlayer(player, numberPlayer, clock);
 		numberPlayer = 2;
-		UpdateDirectionSecondPlayer(enemy, numberPlayer);
+		UpdateDirectionSecondPlayer(enemy, numberPlayer, clock);
 	}
 }
 
@@ -280,6 +308,8 @@ int main(int, char *[])
 {
 	sf::RenderWindow window(sf::VideoMode(800, 600), "Window Title");
 	window.sf::Window::setMouseCursorVisible(false);
+	Clock clock;
+	bool gameEnd = false;
 	Player player;
 	Player enemy;
 	SnowBall snowball;
@@ -290,11 +320,21 @@ int main(int, char *[])
 	initializeMan(enemy, numberPlayer);
 	InitializeSnowBall(snowball, player);
 	InitializeSecondSnowBall(secondsnowball, enemy);
-	while (window.isOpen())
+	while (window.isOpen() && (!gameEnd))
 	{
-		handleEvents(window, player, enemy, snowball);
+		handleEvents(window, player, enemy, snowball, clock);
 		UpdateSnowBall(snowball, player);
 		UpdateSecondSnowBall(secondsnowball, enemy);
+		if (FirstPlayerWin(snowball, enemy))
+		{
+			gameEnd = true;
+			cout << "First player win" << "\n";	
+		}
+		if (SecondPlayerWin(secondsnowball, player))
+		{
+			gameEnd = true;
+			cout << "Second player win" << "\n";
+		}
 		render(window, player, enemy, snowball, secondsnowball);
 	}
 	return 0;
