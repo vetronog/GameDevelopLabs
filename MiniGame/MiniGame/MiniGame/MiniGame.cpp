@@ -31,17 +31,42 @@ void InitializeSnowBall(SnowBall &ball, Player &player)
 	ball.s_snowball.setRadius(5);
 	ball.s_snowball.setFillColor(Color::Green);
 	Vector2f position = player.s_player.getPosition();
-	position.y -= 15;
+	position.x += 15;
+	position.y += 30;
+	ball.s_snowball.setPosition(position);
+}
+
+void InitializeSecondSnowBall(SnowBall &ball, Player &player)
+{
+	ball.s_snowball.setRadius(5);
+	ball.s_snowball.setFillColor(Color::Red);
+	Vector2f position = player.s_player.getPosition();
+	position.x += 15;
 	ball.s_snowball.setPosition(position);
 }
 
 void UpdateSnowBall(SnowBall &ball, Player &player)
 {
 	Vector2f position = ball.s_snowball.getPosition();
-	position.y -= 15;
+	position.y -= 0.1f;
 	if (position.y <= 0)
 	{
 		position = player.s_player.getPosition();
+		position.x += 15;
+		position.y -= 15;
+	}
+	ball.s_snowball.setPosition(position);
+}
+
+void UpdateSecondSnowBall(SnowBall &ball, Player &player)
+{
+	Vector2f position = ball.s_snowball.getPosition();
+	position.y += 0.1f;
+	if (position.y >= 600)
+	{
+		position = player.s_player.getPosition();
+		position.x += 15;
+		position.y += 15;
 	}
 	ball.s_snowball.setPosition(position);
 }
@@ -230,11 +255,10 @@ void handleEvents(sf::RenderWindow & window, Player &player, Player &enemy, Snow
 		UpdateDirectionFirstPlayer(player, numberPlayer);
 		numberPlayer = 2;
 		UpdateDirectionSecondPlayer(enemy, numberPlayer);
-		UpdateSnowBall(ball, player);
 	}
 }
 
-void render(sf::RenderWindow & window, Player & player, Player & enemy, SnowBall &ball)
+void render(sf::RenderWindow & window, Player & player, Player & enemy, SnowBall &ball, SnowBall &secondball)
 {
 	window.clear(sf::Color::White);
 	window.draw(player.s_player);
@@ -246,6 +270,7 @@ void render(sf::RenderWindow & window, Player & player, Player & enemy, SnowBall
 	window.draw(enemy.s_lefthand);
 	
 	window.draw(ball.s_snowball);
+	window.draw(secondball.s_snowball);
 	window.display();
 }
 
@@ -258,15 +283,19 @@ int main(int, char *[])
 	Player player;
 	Player enemy;
 	SnowBall snowball;
+	SnowBall secondsnowball;
 	int numberPlayer = 1;
 	initializeMan(player, numberPlayer);
 	numberPlayer = 2;
 	initializeMan(enemy, numberPlayer);
 	InitializeSnowBall(snowball, player);
+	InitializeSecondSnowBall(secondsnowball, enemy);
 	while (window.isOpen())
 	{
 		handleEvents(window, player, enemy, snowball);
-		render(window, player, enemy, snowball);
+		UpdateSnowBall(snowball, player);
+		UpdateSecondSnowBall(secondsnowball, enemy);
+		render(window, player, enemy, snowball, secondsnowball);
 	}
 	return 0;
 }
